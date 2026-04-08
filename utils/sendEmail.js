@@ -2,17 +2,18 @@ const nodemailer = require("nodemailer");
 
 // Create transporter once — reuse for all emails (faster)
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com", // Explicit host is better than "service"
-  port: 465,              // Secure port
-  secure: true,           // true for 465, false for 587
+  host: "smtp.gmail.com",
+  port: 587,              // Switch to 587
+  secure: false,          // MUST be false for 587 (it uses STARTTLS)
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // MUST be a 16-character App Password
+    pass: process.env.EMAIL_PASS,
   },
   pool: true,
-  maxConnections: 3,      // Lowering to 3 is safer for Gmail's limits
-  socketTimeout: 30000,   // Wait 30s before giving up
-  logger: true,           // Keep this on until you verify it works!
+  maxConnections: 3,
+  family: 4,              // CRITICAL: Forces IPv4 to avoid the log error you saw
+  socketTimeout: 30000,
+  logger: true,
   debug: true,
 });
 const sendEmail = async (options) => {
