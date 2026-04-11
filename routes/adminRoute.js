@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
+const Enrollment = require("../models/Enrollement");
+const Review = require("../models/Review");
+const ContactUs = require("../models/ContactUs");
+const protect = require("../middleware/authMiddleware");
 const sendEmail = require("../utils/sendEmail");
 
 // POST — Send OTP
@@ -83,6 +87,47 @@ router.post("/verify-otp", async (req, res) => {
     res.status(200).json({ success: true, message: "Login successful", token });
   } catch (err) {
     console.error("Verify OTP Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET — Dashboard Stats (admin only)
+router.get("/dashboard-stats", protect, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      totalRegistrations,
+      totalReviews,
+      totalContacts,
+      todayRegistrations,
+      todayReviews,
+      todayContacts
+    ] = await Promise.all([
+      Enrollment.countDocuments(),
+      Review.countDocuments(),
+      ContactUs.countDocuments(),
+      Enrollment.countDocuments({ createdAt: { $gte: today } }),
+      Review.countDocuments({ createdAt: { $gte: today } }),
+      ContactUs.countDocuments({ createdAt: { $gte: today } })
+    ]);
+
+    const stats = {
+        totalRegistrations,
+        totalReviews,
+        totalContacts,
+        todayRegistrations,
+        todayReviews,
+        todayContacts
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (err) {
+    console.error("Dashboard Stats Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
